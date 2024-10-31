@@ -4,6 +4,6 @@ module josimar.trabalhoquartozeonze {
 
     requires com.dlsc.formsfx;
 
-    opens josimar.trabalhoquartozeonze to javafx.fxml;
-    exports josimar.trabalhoquartozeonze;
+    opens dva to javafx.fxml;
+    exports dva;
 }

@@ -1,4 +1,4 @@
-package josimar.trabalhoquartozeonze;
+package dva;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
