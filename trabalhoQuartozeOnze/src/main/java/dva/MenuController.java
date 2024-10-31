@@ -16,15 +16,15 @@ import java.util.ResourceBundle;
 public class MenuController implements Initializable {
 
     @FXML
-    private Button btnProdutos, btnInvetario;
+    private Button btnProduto, btnInventario;
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        btnProdutos.setOnAction(event -> btnProdutosAction());
-        btnInvetario.setOnAction(event -> btnInvetarioAction());
+        btnProduto.setOnAction(event -> btnProdutoAction());
+        btnInventario.setOnAction(event -> btnInventarioAction());
     }
-    private void btnProdutosAction(){
+    private void btnProdutoAction(){
         try {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("Produtos.fxml"));
         Parent root = loader.load();
@@ -37,7 +37,7 @@ public class MenuController implements Initializable {
             e.printStackTrace();
         }
     }
-    private void btnInvetarioAction(){
+    private void btnInventarioAction(){
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Invetario.fxml"));
             Parent root = loader.load();
