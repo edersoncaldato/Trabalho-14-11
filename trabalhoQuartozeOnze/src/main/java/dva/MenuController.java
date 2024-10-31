@@ -26,7 +26,7 @@ public class MenuController implements Initializable {
     }
     private void btnProdutosAction(){
         try {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("produtos.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("Produtos.fxml"));
         Parent root = loader.load();
         Stage stage = new Stage();
         stage.setTitle("Produtos");
@@ -36,10 +36,18 @@ public class MenuController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
     private void btnInvetarioAction(){
-
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Invetario.fxml"));
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.setTitle("Invetário");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
