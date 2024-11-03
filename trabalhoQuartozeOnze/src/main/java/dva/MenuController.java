@@ -39,7 +39,7 @@ public class MenuController implements Initializable {
     }
     private void btnInventarioAction(){
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("Invetario.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Inventario.fxml"));
             Parent root = loader.load();
             Stage stage = new Stage();
             stage.setTitle("Invetário");
