@@ -36,6 +36,6 @@ public class Produto {
     }
     @Override
     public String toString() {
-        return codBarras + "- " + descricao + ": " + saldo;
+        return codBarras + " - " + descricao + ": " + saldo;
     }
 }
