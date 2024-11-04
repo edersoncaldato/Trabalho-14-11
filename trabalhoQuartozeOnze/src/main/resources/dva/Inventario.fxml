@@ -5,7 +5,7 @@
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dva.InventarioController">
    <children>
-      <Button fx:id="btnCodigo" layoutX="300.0" layoutY="66.0" mnemonicParsing="false" text="Finalizar" />
+      <Button fx:id="btnCodigo" layoutX="300.0" layoutY="66.0" mnemonicParsing="false" text="Finalizar" onAction="#finalizarInventario"/>
       <TextField fx:id="txtCodigo" layoutX="111.0" layoutY="66.0" />
       <ListView fx:id="newListViewProduto" layoutX="92.0" layoutY="129.0" prefHeight="200.0" prefWidth="400.0" />
    </children>
