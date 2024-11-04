@@ -128,20 +128,28 @@ public class InventarioController {
                         saldoNovaContagem.put(produto.getCodBarras(), produto.getSaldo());
                 }
 
-                if (compararContagensComSistema(saldoNovaContagem)) {
-                        exibirSucesso("Inventário finalizado com sucesso após segunda contagem!");
-                        encerrarInventario();
-                } else if (saldoNovaContagem.equals(primeiraContagem)) {
-                        // Se a nova contagem é igual à primeira, salva as diferenças
-                        salvarDivergencias(saldoNovaContagem);
-                } else {
-                        // Se diferente da primeira contagem, pede para refazer novamente
-                        exibirSucesso("Diferenças encontradas novamente. Iniciando nova contagem.");
-                        resetarInventario();
-                        primeiraContagem.clear();
-                        primeiraContagem.putAll(saldoNovaContagem);
+                if (contagemAtual == 1) { // Segunda contagem
+                        if (compararContagensComSistema(saldoNovaContagem)) {
+                                exibirSucesso("Inventário finalizado com sucesso após segunda contagem!");
+                                encerrarInventario();
+                        } else if (saldoNovaContagem.equals(primeiraContagem)) {
+                                salvarDivergencias(saldoNovaContagem);
+                        } else {
+                                exibirSucesso("Diferenças encontradas novamente. Iniciando terceira contagem.");
+                                resetarInventario();
+                                primeiraContagem.clear(); // Limpa a primeira contagem, pois ela não é mais relevante
+                                contagemAtual++;
+                        }
+                } else if (contagemAtual == 2) { // Terceira contagem
+                        if (compararContagensComSistema(saldoNovaContagem)) {
+                                exibirSucesso("Inventário finalizado com sucesso após terceira contagem!");
+                                encerrarInventario();
+                        } else {
+                                salvarDivergencias(saldoNovaContagem); // Finaliza com divergência se a terceira contagem for diferente do sistema
+                        }
                 }
         }
+
 
         private boolean compararContagensComSistema(Map<String, Double> saldoAtual) {
                 return saldoAtual.equals(saldoAnterior);
