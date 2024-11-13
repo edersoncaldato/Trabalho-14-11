@@ -3,22 +3,15 @@ package dva;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.event.ActionEvent;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-//Define a classe
 public class InventarioController {
 
-        //Declara variáveis associadas aos componentes da interface (textfield, listview e button)
-        //O @FXML indica que eles estão ligados ao arquivo .fxml
         @FXML
         private TextField txtCodigo;
 
@@ -28,74 +21,56 @@ public class InventarioController {
         @FXML
         private Button btnCodigo;
 
-        // Carrega a lista de produtos do estoque
-        private List<Produto> produtos = Estoque.estoqueAtual();
-        //Lista observável de produtos que sera mpstrada na listView
-        private ObservableList<String> produtosExibidos = FXCollections.observableArrayList();
-        // Saldo inicial do sistema
-        private Map<String, Double> saldoAnterior = new HashMap<>();
-        //Primeira contagem que é guardada para as futuras comparações
-        private Map<String, Double> primeiraContagem = new HashMap<>();
-        //Variável para rastear o número da contagem atual
-        private int contagemAtual = 0; // Rastreia a contagem atual
+        private List<Produto> produtos = Estoque.estoqueAtual();  // Carrega os produtos do estoque
+        private List<String> produtosExibidos = new ArrayList<>();
+        private List<Produto> saldoAnterior = new ArrayList<>();  // Saldo inicial
+        private List<Produto> primeiraContagem = new ArrayList<>();
+        private int contagemAtual = 0;
 
-        //método inicialize, executado após carregar a interface
         @FXML
         public void initialize() {
-                //inicializa o saldo dos produtos e atualiza a exibição
                 for (Produto produto : produtos) {
-                        saldoAnterior.put(produto.getCodBarras(), produto.getSaldo()); //armazena o saldo inicial
-                        produto.setSaldo(0.0); //zera o saldo do produto para o inventário
+                        saldoAnterior.add(new Produto(produto.getCodBarras(), produto.getDescricao(), produto.getSaldo()));
+                        produto.setSaldo(0.0);
                 }
-                atualizarListView();
-                configurarTextField();
+                atualizarVisulizacaoDaLista();
+                txtCodigo.textProperty().addListener((observable, valorAntigo, novoValor) -> {
+                        if (!novoValor.matches("\\d*")) {
+                                txtCodigo.setText(valorAntigo);
+                        }
+                });
+                txtCodigo.setOnAction(event -> processarCodigo());
         }
 
-        //método para limpar a lista obsevável e a preenche com os produtos atualizados, após isso, exibe esses produtos na list view
-        private void atualizarListView() {
+        private void atualizarVisulizacaoDaLista() {
                 produtosExibidos.clear();
                 for (Produto produto : produtos) {
                         produtosExibidos.add(produto.toString());
                 }
-                newListViewProduto.setItems(produtosExibidos); //liga a ListView com os produtos a serem exibidos
+                // Atualiza a ListView com a nova lista de produtos
+                newListViewProduto.getItems().clear();
+                newListViewProduto.getItems().addAll(produtosExibidos);
         }
 
-        //método para configurar o campo txtCodigo para aceitar apenas três digitos e executa "processarCodigo()" ao pressionar a tecla Enter
-        private void configurarTextField() {
-                //restringe o txtField para permitir apenas até 3 digitos
-                txtCodigo.textProperty().addListener((observable, oldValue, newValue) -> {
-                        if (!newValue.matches("\\d{0,3}")) {
-                                txtCodigo.setText(oldValue);
-                        }
-                });
-                //ação para quando o usuário pressiona Enter no txtField
-                txtCodigo.setOnAction(event -> processarCodigo());
-        }
 
-        //método para oberto o código do campop "txtCodigo" e verificar se o código tem 3 digitos.
-        //Se sim, irá buscar o produto que corresponde a ele e é acrescentado 1 em seu saldo
-        //Atualiza o listView e limpa o campo txtCodigo
         private void processarCodigo() {
                 String codigo = txtCodigo.getText();
-                if (codigo.length() == 3) {
+                if (!codigo.isEmpty()) {
                         Produto produtoEncontrado = buscarProduto(codigo);
 
                         if (produtoEncontrado != null) {
-                                //incrementa o saldo do produto e atualiza a exibição na listView
-                                produtoEncontrado.setSaldo(produtoEncontrado.getSaldo() + 1.0); // Adiciona 1 ao saldo
-                                atualizarListView();
+                                produtoEncontrado.setSaldo(produtoEncontrado.getSaldo() + 1.0);
+                                atualizarVisulizacaoDaLista();
                         } else {
-                                exibirErro("Produto não encontrado no estoque!");
+                                exibirMensagem("Produto não encontrado no estoque!");
                         }
 
-                        txtCodigo.clear(); //limpa o campo após a verificação
+                        txtCodigo.clear();
                 } else {
-                        exibirErro("Por favor, insira um código de 3 dígitos.");
+                        exibirMensagem("Por favor, insira um código de barras.");
                 }
         }
 
-        //Método que percorre pela lista "produtos" para encontrar o produto pelo código de 3 digitos
-        //Se encontrado, retorna o produto, e se não, retorna null
         private Produto buscarProduto(String codigo) {
                 for (Produto produto : produtos) {
                         if (produto.getCodBarras().equals(codigo)) {
@@ -105,35 +80,19 @@ public class InventarioController {
                 return null;
         }
 
-        //exibe um alerta de erro
-        private void exibirErro(String mensagem) {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText(mensagem);
-                alert.showAndWait();
-        }
-
-        //método que calcula o saldo atual de cada produto
-        //Se for a primeira contagem, comprara com o saldo do sistema, caso tenha alguma diferença,os dados são armazdenados para uma futura comparação
-        //Se não for a primeira contagem, chama "novaContagem()"
         @FXML
         public void finalizarInventario(ActionEvent event) {
-                Map<String, Double> saldoAtual = new HashMap<>();
-                for (Produto produto : produtos) {
-                        saldoAtual.put(produto.getCodBarras(), produto.getSaldo());
-                }
+                List<Produto> saldoAtual = obterSaldoAtual();
 
                 if (contagemAtual == 0) {
-                        if (compararContagensComSistema(saldoAtual)) {
-                                exibirSucesso("Inventário finalizado com sucesso!");
+                        if (compararContagens(saldoAtual, saldoAnterior)) {
+                                exibirMensagem("Inventário finalizado com sucesso!");
                                 encerrarInventario();
                         } else {
-                                //se diferente, zera a lista e pede uma nova contagem
                                 exibirDivergencias(saldoAtual);
                                 resetarInventario();
-                                primeiraContagem.putAll(saldoAtual); //armazena a primeira contagem para comparações futuras
-                                exibirSucesso("Diferenças encontradas. Por favor, refaça a contagem.");
+                                primeiraContagem.addAll(saldoAtual);
+                                exibirMensagem("Diferenças encontradas.");
                                 contagemAtual++;
                         }
                 } else {
@@ -141,64 +100,76 @@ public class InventarioController {
                 }
         }
 
-        //método que gerencia as contagens seguintes ao comparar com o saldo do sistema, o saldo que se espera ter no estoque
+        private List<Produto> obterSaldoAtual() {
+                List<Produto> saldoAtual = new ArrayList<>();
+                for (Produto produto : produtos) {
+                        saldoAtual.add(new Produto(produto.getCodBarras(), produto.getDescricao(), produto.getSaldo()));
+                }
+                return saldoAtual;
+        }
+
         @FXML
         private void novaContagem(ActionEvent event) {
-                Map<String, Double> saldoNovaContagem = new HashMap<>();
-                for (Produto produto : produtos) {
-                        saldoNovaContagem.put(produto.getCodBarras(), produto.getSaldo());
-                }
+                List<Produto> saldoNovaContagem = obterSaldoAtual();
 
-                if (contagemAtual == 1) { //segunda contagem
-                        if (compararContagensComSistema(saldoNovaContagem)) {
-                                exibirSucesso("Inventário finalizado com sucesso após segunda contagem!");
+                if (contagemAtual == 1) {
+                        if (compararContagens(saldoNovaContagem, saldoAnterior)) {
+                                exibirMensagem("Inventário finalizado com sucesso!");
                                 encerrarInventario();
-                        } else if (saldoNovaContagem.equals(primeiraContagem)) {
+                        } else if (compararContagens(saldoNovaContagem, primeiraContagem)) {
                                 salvarDivergencias(saldoNovaContagem);
                         } else {
-                                exibirSucesso("Diferenças encontradas novamente. Iniciando terceira contagem.");
+                                exibirMensagem("Diferenças encontradas novamente.");
                                 resetarInventario();
-                                primeiraContagem.clear(); // Limpa a primeira contagem, pois ela não é mais relevante
+                                primeiraContagem.clear();
                                 contagemAtual++;
                         }
-                } else if (contagemAtual == 2) { //terceira contagem
-                        if (compararContagensComSistema(saldoNovaContagem)) {
-                                exibirSucesso("Inventário finalizado com sucesso após terceira contagem!");
+                } else if (contagemAtual == 2) {
+                        if (compararContagens(saldoNovaContagem, saldoAnterior)) {
+                                exibirMensagem("Inventário finalizado com sucesso!");
                                 encerrarInventario();
                         } else {
-                                salvarDivergencias(saldoNovaContagem); //finaliza com divergência se a terceira contagem for diferente do sistema
+                                salvarDivergencias(saldoNovaContagem);
                         }
                 }
         }
 
-        //método que compara os saldos atuais com o saldo inicial
-        private boolean compararContagensComSistema(Map<String, Double> saldoAtual) {
-                return saldoAtual.equals(saldoAnterior);
+        private boolean compararContagens(List<Produto> contagem1, List<Produto> contagem2) {
+                if (contagem1.size() != contagem2.size()) return false;
+                for (int i = 0; i < contagem1.size(); i++) {
+                        Produto p1 = contagem1.get(i);
+                        Produto p2 = contagem2.get(i);
+                        if (!p1.getCodBarras().equals(p2.getCodBarras()) || p1.getSaldo() != p2.getSaldo()) {
+                                return false;
+                        }
+                }
+                return true;
         }
 
-        //método que registra as diferenças encontradas
-        private void salvarDivergencias(Map<String, Double> saldoNovaContagem) {
-                StringBuilder divergencias = new StringBuilder("Diferenças finais encontradas:\n");
-                for (Produto produto : produtos) {
-                        String codBarras = produto.getCodBarras();
-                        if (!saldoNovaContagem.get(codBarras).equals(saldoAnterior.get(codBarras))) {
-                                divergencias.append(produto.getDescricao()).append(": ")
-                                        .append("Nova contagem: ").append(saldoNovaContagem.get(codBarras))
-                                        .append(", Saldo sistema: ").append(saldoAnterior.get(codBarras))
-                                        .append("\n");
+        private void salvarDivergencias(List<Produto> saldoNovaContagem) {
+                String divergencias = "Diferenças finais encontradas:\n";
+                for (Produto saldoProduto : saldoNovaContagem) {
+                        Produto saldoInicial = buscarSaldo(saldoProduto.getCodBarras(), saldoAnterior);
+                        if (saldoInicial != null && saldoProduto.getSaldo() != saldoInicial.getSaldo()) {
+                                divergencias += saldoProduto.getCodBarras() + ": " +
+                                        "Nova contagem: " + saldoProduto.getSaldo() +
+                                        ", Saldo sistema: " + saldoInicial.getSaldo() + "\n";
                         }
                 }
 
-                Alert alert = new Alert(AlertType.WARNING);
-                alert.setTitle("Divergências Finais");
-                alert.setHeaderText(null);
-                alert.setContentText(divergencias.toString());
-                alert.showAndWait();
-
-                encerrarInventario(); //finaliza o inventário após salvar as divergências
+                exibirMensagem(divergencias);
+                encerrarInventario();
         }
 
-        //método que finaliza o inventário e reseta os dados
+        private Produto buscarSaldo(String codBarras, List<Produto> saldoLista) {
+                for (Produto saldoProduto : saldoLista) {
+                        if (saldoProduto.getCodBarras().equals(codBarras)) {
+                                return saldoProduto;
+                        }
+                }
+                return null;
+        }
+
         private void encerrarInventario() {
                 txtCodigo.clear();
                 newListViewProduto.getItems().clear();
@@ -208,47 +179,39 @@ public class InventarioController {
                 primeiraContagem.clear();
         }
 
-        //método que zera os saldos dos produtos
         private void resetarInventario() {
                 for (Produto produto : produtos) {
-                        produto.setSaldo(0.0); //reseta o saldo dos produtos
+                        produto.setSaldo(0.0);
                 }
-                atualizarListView(); //atualiza a listView
+                atualizarVisulizacaoDaLista();
         }
 
-        //exibe uma mensagem de suceeso
-        private void exibirSucesso(String mensagem) {
-                Alert alert = new Alert(AlertType.INFORMATION);
-                alert.setTitle("Sucesso");
+        private void exibirMensagem(String mensagem) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION); // AlertType padrão
+                alert.setTitle("Mensagem");
                 alert.setHeaderText(null);
                 alert.setContentText(mensagem);
                 alert.showAndWait();
         }
 
-        //exibe a mensagem informando que há divergências
-        private void exibirDivergencias(Map<String, Double> saldoAtual) {
-                StringBuilder divergencias = new StringBuilder("Divergências encontradas:\n");
+        private void exibirDivergencias(List<Produto> saldoAtual) {
+                String divergencias = "Divergências encontradas:\n";
                 boolean encontrouDivergencia = false;
 
-                for (Produto produto : produtos) {
-                        String codBarras = produto.getCodBarras();
-                        if (!saldoAtual.get(codBarras).equals(saldoAnterior.get(codBarras))) {
-                                divergencias.append(produto.getDescricao()).append(": ")
-                                        .append("Saldo atual: ").append(saldoAtual.get(codBarras))
-                                        .append(", Saldo esperado: ").append(saldoAnterior.get(codBarras))
-                                        .append("\n");
+                for (Produto saldoProduto : saldoAtual) {
+                        Produto saldoInicial = buscarSaldo(saldoProduto.getCodBarras(), saldoAnterior);
+                        if (saldoInicial != null && saldoProduto.getSaldo() != saldoInicial.getSaldo()) {
+                                divergencias += saldoProduto.getCodBarras() + ": " +
+                                        "Saldo atual: " + saldoProduto.getSaldo() +
+                                        ", Saldo esperado: " + saldoInicial.getSaldo() + "\n";
                                 encontrouDivergencia = true;
                         }
                 }
 
                 if (!encontrouDivergencia) {
-                        divergencias.append("Nenhuma divergência encontrada.");
+                        divergencias += "Nenhuma divergência encontrada.";
                 }
 
-                Alert alert = new Alert(AlertType.WARNING);
-                alert.setTitle("Divergências");
-                alert.setHeaderText(null);
-                alert.setContentText(divergencias.toString());
-                alert.showAndWait();
+                exibirMensagem(divergencias);
         }
 }
